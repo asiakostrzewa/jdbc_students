@@ -6,6 +6,7 @@ import com.sda.javapoz24.Student;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class StudentDao {
     private MysqlDBConnection connector;
@@ -73,7 +74,7 @@ public class StudentDao {
                 student.setFirstName(rekordy.getString(2));
                 student.setLastName(rekordy.getString(3));
                 student.setAge(Integer.parseInt(rekordy.getString(4)));
-                student.setAwarded(Boolean.parseBoolean(rekordy.getString(5)));
+                student.setAwarded(rekordy.getBoolean(5));
                 student.setGender(Gender.valueOf(rekordy.getString(6)));
                 // ^^ załadowanie wartości z kolumn do obiektu
                 // umieszczenie obiektu w liście:
@@ -83,6 +84,34 @@ public class StudentDao {
             throwables.printStackTrace();
         }
         return students;
+    }
+
+    public Optional<Student> getStudent(Long identifier) {
+        try (Connection connection = connector.createConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(StudentQuerries.SELECT_BY_ID);
+            preparedStatement.setLong(1, identifier);
+
+            ResultSet rekordy = preparedStatement.executeQuery();
+
+            // dopóki są rekordy
+            while (rekordy.next()) {
+                Student student = new Student();
+                student.setId(rekordy.getLong(1));
+                student.setFirstName(rekordy.getString(2));
+                student.setLastName(rekordy.getString(3));
+                student.setAge(Integer.parseInt(rekordy.getString(4)));
+                student.setAwarded(rekordy.getBoolean(5));
+                student.setGender(Gender.valueOf(rekordy.getString(6)));
+
+                // ^^ załadowanie wartości z kolumn do obiektu
+                // umieszczenie obiektu w liście:
+                return Optional.of(student);
+            }
+
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return Optional.empty();
     }
 
     public void deleteStudent(long identifier){
@@ -97,4 +126,30 @@ public class StudentDao {
     }
 
     //todo: update
+    /**
+     * Aktaulizuj obiekt do nowych wartości reprezentowanych przez newValues.
+     * @param identifier - identyfikator obiektu który chcemy zmienić
+     * @param newValues - obiekt zawierający wartości obiektu po zmianie
+     */
+    public void updateStudent(long identifier, Student newValues){
+        Optional<Student> studentOptional = getStudent(identifier);
+        if(studentOptional.isPresent()) {
+            System.out.println("Zmieniam: " + studentOptional.get());
+            try (Connection connection = connector.createConnection()) {
+                PreparedStatement preparedStatement = connection.prepareStatement(StudentQuerries.UPDATE_STUDENT);
+                preparedStatement.setString(1, newValues.getFirstName());
+                preparedStatement.setString(2, newValues.getLastName());
+                preparedStatement.setInt(3, newValues.getAge());
+                preparedStatement.setInt(4, newValues.isAwarded() ? 1 : 0);
+                preparedStatement.setString(5, newValues.getGender().toString());
+                preparedStatement.setLong(6, identifier);
+                int affectedRecords = preparedStatement.executeUpdate();
+                System.out.println("Zmodyfikowanych rekordów: " + affectedRecords);
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+        }else{
+            System.out.println("Brak takiego studenta.");
+        }
+    }
 }

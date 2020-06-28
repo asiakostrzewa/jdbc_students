@@ -23,4 +23,9 @@ public interface StudentQuerries {
     //todo: dopisać metodę update
     //Użytkownik wpisuje identyfikator obiektu i jego dane
     //następnie program tworzy zapytanie modyfikujące treść obiektu:
+    public static final String UPDATE_STUDENT =
+            "UPDATE `student` SET `firstName` = ?,`lastName` = ?, `age` = ?, `awarded` = ?, `gender` = ? where `id` = ?;";
+
+    public static final String SELECT_BY_ID =
+            "select * from `student` where `id` = ?;";
 }
